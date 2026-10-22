@@ -1,0 +1,29 @@
+# Python Cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Large media & archive files
+*.mp4
+*.zip
+*.tar
+*.gz
+
+# Virtual Environments
+.venv/
+venv/
+env/
+
+# IDE & OS
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Jupyter Checkpoints
+.ipynb_checkpoints/
+
+# Temporary & Log files
+*.log
+*.tmp
+scratch/

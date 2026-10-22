@@ -1,0 +1,34 @@
+{
+  "tasks": [
+    "step on something",
+    "sit comfortably",
+    "place flowers",
+    "get potatoes out of fire",
+    "water plant",
+    "get lemon out of tea",
+    "dig hole",
+    "open bottle of beer",
+    "open parcel",
+    "serve wine",
+    "pour sugar",
+    "smear butter",
+    "extinguish fire",
+    "pound carpet"
+  ],
+  "descriptions": {
+    "step on something": "find a sturdy elevate stable object or platform such as a table, chair, stool, or bench strong enough to step on and reach top shelf",
+    "sit comfortably": "find a soft cushioned ergonomic comfortable seating furniture such as a couch, sofa, armchair, or bed for relaxed seating",
+    "place flowers": "find an upright watertight decorative container or vessel such as a vase, jug, cup, or bowl suitable for holding flower stems with water",
+    "get potatoes out of fire": "find a long heat-resistant implement, utensil, or tongs such as a fork, knife, spoon, or metal tool to retrieve hot potatoes safely",
+    "water plant": "find a portable liquid container or vessel such as a bottle, cup, bowl, or jug with an opening to carry water and pour over soil",
+    "get lemon out of tea": "find a small grasping or scooping utensil such as a spoon, fork, or tongs to lift a lemon slice from hot tea liquid",
+    "dig hole": "find a sturdy rigid scooping or penetrating tool such as a shovel, spade, spoon, or knife to displace dirt, soil, or earth",
+    "open bottle of beer": "find a rigid pry tool or lever with firm edge such as a bottle opener, knife, key, or sturdy metal edge to pry bottle crown cap",
+    "open parcel": "find a sharp cutting blade, edge, or shear tool such as a knife, scissors, or razor blade to slice open package tape and cardboard boxes",
+    "serve wine": "find an appropriate glassware goblet or drinking vessel such as a stemmed wine glass or clear drinking cup to pour and enjoy wine",
+    "pour sugar": "find a small scooping utensil or container with dispenser spout such as a spoon, cup, or bowl to transfer and sprinkle granulated sugar",
+    "smear butter": "find a flat-bladed spreading utensil or knife such as a butter knife, table knife, or flat spatula to spread softened butter evenly",
+    "extinguish fire": "find a firefighting vessel, smothering fabric, or extinguishing agent such as a fire hydrant, water bottle, blanket, or fire extinguisher",
+    "pound carpet": "find a long rigid club, stick, or paddle implement such as a baseball bat, stick, paddle, or carpet beater to vigorously strike hanging carpets"
+  }
+}

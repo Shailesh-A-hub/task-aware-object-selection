@@ -1,0 +1,8 @@
+{
+  "obj:cushion": "cushion: physical household or environmental item; evaluate for suitability, shape, stability, and handling based on object context",
+  "obj:ladder": "ladder: physical household or environmental item; evaluate for suitability, shape, stability, and handling based on object context",
+  "obj:pliers": "pliers: physical household or environmental item; evaluate for suitability, shape, stability, and handling based on object context",
+  "obj:flashlight": "flashlight: physical household or environmental item; evaluate for suitability, shape, stability, and handling based on object context",
+  "obj:frying pan": "frying pan: physical household or environmental item; evaluate for suitability, shape, stability, and handling based on object context",
+  "task:reheat leftover food": "Objects: microwave, microwave-safe bowl, saucepan; Affordances: the microwave\u2019s enclosed cavity heats food quickly, the bowl is a heat-resistant hollow container, and the saucepan conducts heat from a stovetop while holding food."
+}
