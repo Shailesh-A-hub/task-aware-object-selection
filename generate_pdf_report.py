@@ -7,8 +7,9 @@ import os
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from reportlab.lib.units import inch
 from reportlab.platypus import (
-    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether, Preformatted
+    SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, PageBreak, KeepTogether, Preformatted, Image
 )
 from reportlab.pdfgen import canvas
 
@@ -260,6 +261,12 @@ def build_pdf(filename="FINAL_REVIEW_REPORT.pdf"):
     ]))
     story.append(t)
     story.append(Spacer(1, 10))
+
+    if os.path.exists("comparison_chart.png"):
+        story.append(Paragraph("<b>Figure 1: Quantitative Metric Comparison against Base Papers (Sawatzky et al. CVPR 2019 & Chuang et al. CVPR 2018)</b>", ParagraphStyle('FigCaption', parent=body_style, fontSize=8.5, alignment=1, textColor=colors.HexColor('#1e3a8a'))))
+        story.append(Spacer(1, 6))
+        story.append(Image("comparison_chart.png", width=6.0*inch, height=4.5*inch))
+        story.append(Spacer(1, 12))
 
     # Real-World Validation Sub-section
     story.append(Paragraph("Real-World Experimental Validation Results", h2_style))
