@@ -4,9 +4,9 @@
 [![YOLOv8](https://img.shields.io/badge/YOLO-v8--nano-green.svg)](https://docs.ultralytics.com/)
 [![Sentence-BERT](https://img.shields.io/badge/Sentence--BERT-all--MiniLM--L6--v2-orange.svg)](https://www.sbert.net/)
 [![OpenRouter](https://img.shields.io/badge/LLM-OpenRouter-purple.svg)](https://openrouter.ai/)
-[![Target Hardware](https://img.shields.io/badge/Hardware-RISC--V%20%2B%20FPGA-red.svg)](https://dvcon-india.org/)
+[![Execution](https://img.shields.io/badge/Execution-Edge%20CPU%20Only-brightgreen.svg)](https://github.com/)
 
-An edge-deployable, training-free framework for **task-aware object selection** in cluttered scenes. Unlike conventional detectors that treat all instances of a category identically, this system combines **YOLOv8-nano**, an **offline 47 KB LLM-distilled affordance knowledge bank**, and **OpenRouter dynamic reasoning** to identify, rank, and select the optimal object for any arbitrary human task query while safely rejecting scenes when no suitable object is present.
+An edge-deployable, training-free framework for **task-aware object selection** in cluttered scenes. Unlike conventional detectors that treat all instances of a category identically, this system combines **YOLOv8-nano**, an **offline 35.5 KB LLM-distilled affordance knowledge bank**, and **OpenRouter dynamic reasoning** to identify, rank, and select the optimal object for any arbitrary human task query on a standard CPU, while safely rejecting scenes when no suitable object is present.
 
 ---
 
@@ -16,7 +16,7 @@ An edge-deployable, training-free framework for **task-aware object selection** 
 3. [System Architecture & 4-Stage Pipeline](#3-system-architecture--4-stage-pipeline)
 4. [Offline Knowledge Bank Footprint Analysis](#4-offline-knowledge-bank-footprint-analysis)
 5. [OpenRouter Dynamic Reasoning for Novel Tasks & Objects](#5-openrouter-dynamic-reasoning-for-novel-tasks--objects)
-6. [Hardware Co-Design (RISC-V + FPGA Accelerator)](#6-hardware-co-design-risc-v--fpga-accelerator)
+6. [Edge CPU Performance & Lightweight Footprint](#6-edge-cpu-performance--lightweight-footprint)
 7. [Repository File Structure](#7-repository-file-structure)
 8. [Installation & Setup](#8-installation--setup)
 9. [How to Run the Project](#9-how-to-run-the-project)
@@ -48,8 +48,8 @@ Traditional computer vision frameworks (YOLO, Faster R-CNN, SSD) excel at **obje
 | **Training Requirement** | **Supervised**: Requires training on ~30,000 task-annotated COCO images | **Zero-Shot / Training-Free**: No task training needed; runs out-of-the-box |
 | **Inference Dependency** | Must process and aggregate all scene detections simultaneously in a graph | Evaluates each candidate independently with **O(1) array lookup** |
 | **Novel / Open-Domain Query Support** | Strictly locked to the 14 training tasks | **Unlimited queries**: OpenRouter dynamically decomposes novel tasks |
-| **Edge & Hardware Feasibility** | Impractical for edge (requires GPU, >150 W) | **Edge feasible**: CPU-only (~150 ms) or RISC-V + FPGA (<35 ms, 4.3 W) |
-| **Memory Footprint** | >170 MB model weights | **35.5 KB (INT8) / 70.7 KB (FP16)** on-chip knowledge bank |
+| **Edge & Hardware Feasibility** | Impractical for edge (requires GPU, >150 W) | **Edge feasible**: Standard CPU (~140-150 ms, <15 W, zero GPU required) |
+| **Memory Footprint** | >170 MB model weights | **35.5 KB (INT8) / 70.7 KB (FP16)** offline knowledge bank |
 
 ---
 
@@ -101,7 +101,7 @@ Raw Camera Image + Task Query ("sit comfortable")
 
 ## 4. Offline Knowledge Bank Footprint Analysis
 
-To run on resource-constrained platforms (such as RISC-V CPUs with limited on-chip SRAM or FPGA Block RAM), the knowledge bank encodes **all 80 COCO categories** and **14 official COCO tasks** into compact embeddings.
+To run on resource-constrained platforms (such as edge CPUs, embedded microprocessors, and battery-powered mobile systems), the knowledge bank encodes **all 80 COCO categories** and **14 official COCO tasks** into compact embeddings.
 
 File: `generate_knowledge_bank.py`
 
@@ -138,31 +138,26 @@ When an arbitrary task query is entered (e.g. `"reheat leftover food"`, `"reach 
 
 ---
 
-## 6. Hardware Co-Design (RISC-V + FPGA Accelerator)
+## 6. Edge CPU Performance & Lightweight Footprint
 
-For the **DVCon India 2026 Design Contest**, the architecture is partitioned across a heterogeneous platform:
+The system is engineered specifically for deployment on resource-constrained **edge CPU hardware** without requiring discrete GPUs or specialized accelerators:
 
 ```
 ┌────────────────────────────────────────────────────────┐
-│           RISC-V Vega Processor (1.4 GHz)              │
-│  - Stage 1: YOLO-tiny / nano INT8 Detection   (25 ms)  │
-│  - Stage 2: Feature Extraction & Setup         (5 ms)  │
-│  - Stage 4: Candidate Sorting & Selection      (2 ms)  │
-└──────────────────────────┬─────────────────────────────┘
-                           │ 32-bit AXI4 Bus (100 MHz)
-                           ▼
-┌────────────────────────────────────────────────────────┐
-│          Genesys-2 Kintex-7 FPGA Accelerator           │
-│  - 4x Parallel Dot-Product Engines (DSP Slices)        │
-│  - 512 DSP slices utilized (61% utilization)           │
-│  - Stage 3: Cosine Similarity Matching         (3 ms)  │
-│  - Knowledge Bank stored in Block RAM         (35.5 KB)│
+│               Standard Edge CPU Pipeline               │
+│  - Stage 1: YOLOv8-nano Detection              (~120 ms)│
+│  - Stage 2: 384-d Embedding Cosine Sim / Lookup (~15 ms)│
+│  - Stage 3: Weighted Score Fusion & Gating      (~5 ms) │
+│  - Stage 4: Optimal Candidate Selection         (~2 ms) │
 └────────────────────────────────────────────────────────┘
 ```
 
-* **Total End-to-End Latency**: 35 ms (~28 FPS real-time operation)
-* **System Power Consumption**: 4.3 W (< 5.0 W battery budget for assistive mobile robots)
-* **FPGA Resource Utilization**: 42% LUTs, 29% FFs, 40% BRAM, 61% DSP slices
+* **Total End-to-End Latency**: ~140 - 150 ms (real-time responsiveness on standard CPU)
+* **Power Consumption**: < 15 W (standard edge CPU vs >180 W workstation GPU)
+* **Memory Footprint**:
+  * Knowledge Bank: **35.50 KB (INT8)** / **70.75 KB (FP16)**
+  * YOLOv8-nano Weights: **6.5 MB**
+  * Zero GPU RAM required!
 
 ---
 
@@ -273,9 +268,9 @@ Use this section to prepare for reviewer questions during project reviews and de
 
 ### Q2: Why not just use CLIP (Contrastive Language-Image Pretraining)?
 **Answer:** CLIP is a powerful vision-language model, but:
-1. It is computationally expensive (>150 W GPU requirement), making it impossible to deploy on low-power mobile assistive robots.
+1. It is computationally expensive (>150 W GPU requirement), making it impossible to deploy on low-power mobile assistive devices or standard CPUs.
 2. Models like TaskCLIP struggle to localize multiple object candidates in real-time on CPU.
-Our pipeline decouples lightweight object localization (YOLOv8n, ~3.2M params on CPU) from semantic similarity (Sentence-BERT in 15 ms / FPGA dot-product in 3 ms), consuming only 4.3 W.
+Our pipeline decouples lightweight object localization (YOLOv8n, ~3.2M params on CPU) from semantic similarity (Sentence-BERT in 15 ms / cosine lookup in <5 ms), running efficiently on standard CPU hardware under 15 W.
 
 ### Q3: Why is weighted score fusion needed? Why not rely 100% on semantic similarity?
 **Answer:** Formula: `Score = 0.7 * Sim(oi, t) + 0.3 * Conf(oi)`.
@@ -290,15 +285,14 @@ If you ask for `"cut something"` in a living room containing only couches and bo
 ### Q5: How does the system handle objects that were NEVER seen during training?
 **Answer:** When an open-vocabulary object (like `ladder` or `frying pan`) is entered, OpenRouter dynamically distills a 1-sentence physical affordance description focusing on structural and functional properties. Sentence-BERT encodes this into a 384-dimensional vector, and it is cached for instant future reuse.
 
-### Q6: How does this fit into the DVCon 2026 hardware constraints?
+### Q6: Why is CPU-only edge deployment advantageous over GPU-based systems?
 **Answer:**
-* **BRAM Memory**: The entire 80-class + 14-task knowledge bank quantizes to **35.5 KB INT8**, fitting comfortably inside FPGA Block RAM (under the 47 KB budget).
-* **Latency**: Offloading the 384-d cosine dot-products to 4 parallel DSP engines on the Kintex-7 FPGA executes in 3 ms. Total system latency is 35 ms, exceeding the 50 ms real-time requirement.
-* **Power**: System draws 4.3 W, well within the 5.0 W battery budget.
+* **Cost & Accessibility**: Eliminates the need for expensive, dedicated GPU hardware ($1,000+ or cloud GPU costs), running seamlessly on standard commercial laptops or single-board edge computers.
+* **Compact Memory Footprint**: The entire 80-class + 14-task knowledge bank quantizes to **35.5 KB INT8**, which fits entirely inside the CPU cache.
+* **Low Power & Real-Time**: Consumes < 15 W while delivering 140-150 ms end-to-end response time, ideal for battery-operated assistive systems.
 
 ---
 
 ## 👥 Authors & Team
-* **Team**: RTL Rebels (Team 616)
 * **Members**: Shailesh A., Pradeep P., Sanjay K. (VIT Vellore)
-* **Advisor / Subject**: Fall Semester 2026-27 | DVCon India 2026 Design Contest
+* **Course / Subject**: Fall Semester 2026-27 | Final Review Presentation

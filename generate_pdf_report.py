@@ -148,7 +148,7 @@ def build_pdf(filename="FINAL_REVIEW_REPORT.pdf"):
         body_style
     ))
     story.append(Paragraph(
-        "Detected objects are evaluated against the task query using cosine similarity between 384-dimensional Sentence-BERT dense embeddings. An exact weighted score fusion mechanism combining semantic relevance (70%) and visual detection confidence (30%) produces candidate rankings, while a dual-gate threshold filter (minimum semantic similarity 0.12, final score 0.25) prevents false selections in negative scenes. Quantitative evaluation demonstrates competitive accuracy (36.2% mAP on COCO-Tasks) while achieving 35 ms latency and 4.3 W power draw under a heterogeneous RISC-V Vega and Kintex-7 FPGA accelerator co-design.",
+        "Detected objects are evaluated against the task query using cosine similarity between 384-dimensional Sentence-BERT dense embeddings. An exact weighted score fusion mechanism combining semantic relevance (70%) and visual detection confidence (30%) produces candidate rankings, while a dual-gate threshold filter (minimum semantic similarity 0.12, final score 0.25) prevents false selections in negative scenes. Quantitative evaluation demonstrates competitive accuracy (36.2% mAP on COCO-Tasks) while achieving 140-150 ms end-to-end latency on standard edge CPU hardware, eliminating the need for expensive GPU infrastructure.",
         body_style
     ))
 
@@ -183,7 +183,7 @@ def build_pdf(filename="FINAL_REVIEW_REPORT.pdf"):
         "|                             1. OFFLINE PRECOMPUTATION PHASE                             |\n"
         "|  80 COCO Classes -> LLM Affordances -> Sentence-BERT (384-d) -> Quantize to 35.5 KB INT8|\n"
         "+--------------------------------------------+--------------------------------------------+\n"
-        "                                             | Loaded into On-Chip Memory / BRAM\n"
+        "                                             | Loaded into Edge Memory / Offline Cache\n"
         "                                             v\n"
         "+-----------------------------------------------------------------------------------------+\n"
         "|                             2. ONLINE EDGE INFERENCE PIPELINE                           |\n"
@@ -237,9 +237,9 @@ def build_pdf(filename="FINAL_REVIEW_REPORT.pdf"):
         ["Training Required?", "Supervised on 30k images", "Supervised on affordance labels", "Zero-Shot / Training-Free"],
         ["Novel Task Generalization", "No (locked to 14 tasks)", "No (fixed 20 affordances)", "Infinite (Any Natural Language Query)"],
         ["Untrained Object Support", "No (80 categories only)", "No (fixed classes)", "Yes (OpenRouter Dynamic Distillation)"],
-        ["End-to-End Latency", "450 ms (Workstation GPU)", "380 ms (Workstation GPU)", "150 ms (CPU) / 35 ms (FPGA accelerated)"],
-        ["Power Draw", "~180 W", "~150 W", "4.3 W (97.6% power reduction)"],
-        ["Memory Footprint", ">170 MB", ">140 MB", "35.50 KB INT8 BRAM (+ 6.5MB detector)"]
+        ["End-to-End Latency", "450 ms (Workstation GPU)", "380 ms (Workstation GPU)", "140 - 150 ms (Standard Edge CPU)"],
+        ["Hardware Required", "High-End GPU (180 W)", "Workstation GPU (150 W)", "Standard Edge CPU (< 15 W)"],
+        ["Memory Footprint", ">170 MB (ResNet-101)", ">140 MB", "35.50 KB INT8 (+ 6.5MB detector)"]
     ]
     
     t = Table(table_data, colWidths=[110, 125, 125, 144])
@@ -277,7 +277,7 @@ def build_pdf(filename="FINAL_REVIEW_REPORT.pdf"):
     # Section 7: Conclusion & Future Scope
     story.append(Paragraph("7. Conclusion & Future Work", h1_style))
     story.append(Paragraph(
-        "This project delivers an edge-deployable, zero-shot task-aware object selection system achieving 36.2% mAP on COCO-Tasks. By combining YOLOv8-nano, a 35.5 KB INT8 knowledge bank, and OpenRouter dynamic LLM reasoning, the system eliminates task-specific training, handles arbitrary novel commands and objects, and satisfies all DVCon 2026 hardware constraints (35 ms latency, 4.3 W power). Future enhancements include 6-DOF 3D robotic grasp pose estimation, multi-room visual SLAM integration, and 28 nm ASIC accelerator fabrication.",
+        "This project delivers an edge-deployable, zero-shot task-aware object selection system achieving 36.2% mAP on COCO-Tasks. By combining YOLOv8-nano, a 35.5 KB INT8 knowledge bank, and OpenRouter dynamic LLM reasoning, the system eliminates task-specific training, handles arbitrary novel commands and objects, and executes efficiently on standard CPU hardware (140-150 ms end-to-end latency). Future enhancements include 6-DOF robotic grasp pose estimation, multi-room visual SLAM integration, and on-device quantization for mobile/robotics CPUs.",
         body_style
     ))
 

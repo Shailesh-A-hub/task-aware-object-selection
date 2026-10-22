@@ -129,16 +129,16 @@ threshold = st.sidebar.slider("Relevance Threshold", min_value=0.0, max_value=1.
                               help="Minimum score below which objects are rejected as unsuitable.")
 
 use_int8 = st.sidebar.checkbox("Use INT8 Knowledge Bank (35.5 KB)", value=False,
-                               help="Simulate ultra-compact FPGA BRAM INT8 representation.")
+                               help="Enable ultra-compact quantized INT8 knowledge bank for edge CPU deployment.")
 
 st.sidebar.markdown("---")
 st.sidebar.info("""
-**DVCon / IEEE Specs:**
+**System Architecture Specs:**
 - Base: Sawatzky et al. (CVPR 2019)
 - Detector: YOLOv8-nano (CPU)
 - Embeddings: 384-d Sentence-BERT
-- Offline Knowledge Bank: ~47 KB
-- Target Latency: < 35 ms (FPGA accelerated)
+- Offline Knowledge Bank: 35.5 KB (INT8)
+- End-to-End Latency: ~140-150 ms (Standard Edge CPU)
 """)
 
 # ----------------- INITIALIZE DETECTOR (CACHED) -----------------

@@ -7,7 +7,7 @@ Features:
 - Exact weighted fusion: score = alpha * semantic_sim + (1 - alpha) * detection_conf (alpha=0.7).
 - Relevance thresholding (0.25) to identify when no suitable object exists in the scene.
 - OpenRouter integration for open-vocabulary novel objects and novel task decomposition.
-- Profiling / latency breakdown (CPU/RISC-V matching).
+- Profiling / latency breakdown (CPU timing).
 - Comprehensive OpenCV visualizer with bounding boxes and score breakdowns.
 """
 
