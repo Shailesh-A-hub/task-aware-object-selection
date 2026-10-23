@@ -68,7 +68,7 @@ COCO_80_DESCRIPTIONS = {
     "cake": "sweet baked dessert confection made from flour, sugar, eggs, and decorated with frosting; sliced and served at celebrations",
     "chair": "single-person elevated seat with backrest and four legs; designed for individual upright seating and resting",
     "couch": "wide upholstered sofa with soft cushioned seating, padded armrests, and sturdy back support; prime choice for relaxing and sitting comfortably",
-    "potted plant": "decorative live flora in container with soil; intended solely for aesthetics and decoration; unsuitable for sitting, eating, or tools",
+    "potted plant": "decorative live flora in container with soil; living botanical houseplant that photosynthesizes, produces fresh oxygen, and purifies indoor air naturally; unsuitable for sitting, eating, or tools",
     "bed": "large padded mattress on sturdy bedstead frame with pillows and sheets; designed for reclining, sleeping, resting, and sitting",
     "dining table": "elevated broad flat wooden or composite tabletop on sturdy legs; used for dining, holding dishes, placing items, or elevated support",
     "toilet": "plumbing sanitation ceramic fixture with bowl and seat; used strictly for human waste excretion in bathrooms",
