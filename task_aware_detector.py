@@ -28,16 +28,19 @@ class TaskAwareDetector:
         yolo_model_path: str = "yolov8n.pt",
         sentence_model_name: str = "all-MiniLM-L6-v2",
         kb_dir: str = "knowledge_bank",
+        knowledge_bank_dir: Optional[str] = None,
         use_quantized_int8: bool = False,
+        use_int8: Optional[bool] = None,
         openrouter_api_key: Optional[str] = None,
-        openrouter_model: str = "meta-llama/llama-3.3-70b-instruct:free",
+        openrouter_model: str = "openrouter/auto",
         alpha: float = 0.7,
-        threshold: float = 0.25
+        threshold: float = 0.25,
+        **kwargs
     ):
         self.alpha = alpha
         self.threshold = threshold
-        self.kb_dir = kb_dir
-        self.use_quantized_int8 = use_quantized_int8
+        self.kb_dir = knowledge_bank_dir if knowledge_bank_dir is not None else kb_dir
+        self.use_quantized_int8 = use_int8 if use_int8 is not None else use_quantized_int8
 
         print("[TaskAwareDetector] Initializing models and offline knowledge bank...")
         # 1. Load YOLOv8-nano
