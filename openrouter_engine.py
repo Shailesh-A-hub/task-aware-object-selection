@@ -72,11 +72,12 @@ class OpenRouterEngine:
         # Active OpenRouter models with priority order
         models_to_try = [
             self.model,
-            "openrouter/auto",
-            "google/gemma-4-26b-a4b-it:free",
             "nvidia/nemotron-3.5-lightning:free",
-            "minimax/minimax-m3.1-flash:free",
-            "liquid/lfm-2.5-2.6b:free"
+            "openrouter/auto",
+            "recursive/flint-v1.0:free",
+            "thinkingmachines/inkling-small:free",
+            "google/gemma-4-26b-a4b-it:free",
+            "minimax/minimax-m3.1-flash:free"
         ]
         # Remove duplicates while preserving order
         seen = set()
@@ -102,7 +103,18 @@ class OpenRouterEngine:
 
                 if response.status_code == 200:
                     data = response.json()
-                    content = data["choices"][0]["message"]["content"].strip()
+                    choices = data.get("choices", [])
+                    if not choices:
+                        self.last_error = f"Model {candidate_model} returned empty choices"
+                        continue
+                    msg = choices[0].get("message", {})
+                    raw_content = msg.get("content") or msg.get("reasoning") or ""
+                    if not raw_content or not isinstance(raw_content, str):
+                        self.last_error = f"Model {candidate_model} returned non-string content"
+                        continue
+                    content = raw_content.strip()
+                    if not content:
+                        continue
                     self.last_response = content
                     self.last_call_success = True
                     self.last_model_used = candidate_model
@@ -110,7 +122,6 @@ class OpenRouterEngine:
                 else:
                     self.last_error = f"Model {candidate_model} returned HTTP {response.status_code}: {response.text}"
                     print(f"[OpenRouterEngine] {self.last_error}")
-                    # Try next candidate if rate-limited or unavailable
                     continue
 
             except Exception as err:
