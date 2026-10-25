@@ -37,7 +37,7 @@ nb = {
             "outputs": [],
             "source": [
                 "# Step 1: Install required dependencies\n",
-                "!pip install ultralytics sentence-transformers requests opencv-python matplotlib"
+                "!pip install streamlit ultralytics sentence-transformers requests opencv-python matplotlib"
             ]
         },
         {
@@ -269,9 +269,12 @@ nb = {
             "outputs": [],
             "source": [
                 "# Run this cell to launch the Web Dashboard inside Google Colab!\n",
+                "!pip install -q streamlit\n",
                 "!npm install -g localtunnel\n",
-                "!curl ipv4.icanhazip.com\n",
-                "!streamlit run app.py & npx localtunnel --port 8501"
+                "print(\"Your Tunnel Password (copy this IP):\")\n",
+                "!curl -s ipv4.icanhazip.com\n",
+                "print(\"\\nOpening tunnel... Click the URL below, paste the IP above, and the dashboard will load:\")\n",
+                "!python -m streamlit run app.py --server.port 8501 --server.headless true & npx localtunnel --port 8501"
             ]
         }
     ],
