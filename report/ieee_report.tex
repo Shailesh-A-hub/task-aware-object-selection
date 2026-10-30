@@ -1,0 +1,208 @@
+\documentclass[conference]{IEEEtran}
+\IEEEoverridecommandlockouts
+
+% Packages
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{algorithmic}
+\usepackage{graphicx}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{booktabs}
+\usepackage{url}
+
+\def\BibTeX{{\rm B\kern-.05em{\sc i\kern-.025em b}\kern-.08em
+    T\kern-.1667em\lower.7ex\hbox{E}\kern-.125emX}}
+
+\begin{document}
+
+\title{SCORE: Semantic and Confidence-Based Object Ranking at the Edge for Task-Aware Selection\\
+\thanks{Capstone Project (Final Review) 2025--2026, School of Electronics Engineering (SENSE), Vellore Institute of Technology (VIT), Vellore, India.}
+}
+
+\author{
+\IEEEauthorblockN{Pradeep P., Shailesh A., Sanjay K.}
+\IEEEauthorblockA{\textit{School of Electronics Engineering (SENSE)} \\
+\textit{Vellore Institute of Technology (VIT)}\\
+Vellore, Tamil Nadu, India}
+\and
+\IEEEauthorblockN{Dr. Sriharipriya K. C.}
+\IEEEauthorblockA{\textit{Faculty Guide, School of Electronics Engineering (SENSE)} \\
+\textit{Vellore Institute of Technology (VIT)}\\
+Vellore, Tamil Nadu, India}
+}
+
+\maketitle
+
+\begin{abstract}
+Conventional computer vision object detection frameworks identify and localize object categories in a scene, but they are fundamentally incapable of selecting the specific object best suited for a given human task query. In Review 1, a lightweight training-free framework was proposed using a YOLOv8-nano detector and an offline 47~KB precomputed semantic knowledge bank. For the Final Review, this architecture has been significantly advanced by integrating a dual-tier semantic engine: an ultra-compact 35.5~KB INT8 precomputed offline knowledge bank for standard COCO classes, coupled with OpenRouter dynamic Large Language Model (LLM) affordance reasoning for open-vocabulary, untrained objects and open-domain natural language commands. Detected objects are evaluated against the task query using cosine similarity between 384-dimensional Sentence-BERT dense embeddings. An exact weighted score fusion mechanism combining semantic relevance (70\%) and visual detection confidence (30\%) produces candidate rankings, while a dual-gate threshold filter (minimum semantic similarity 0.12, final score 0.25) prevents false selections in negative scenes. Quantitative evaluation demonstrates competitive accuracy (36.2\% mAP on COCO-Tasks) while achieving 140--150~ms end-to-end latency on standard edge CPU hardware, eliminating the need for expensive GPU infrastructure.
+\end{abstract}
+
+\begin{IEEEkeywords}
+Task-Aware Object Detection, Object Affordances, Edge AI, Large Language Models, Knowledge Distillation, INT8 Quantization, Assistive Robotics.
+\end{IEEEkeywords}
+
+\section{Introduction}
+Autonomous and assistive robotic systems operating in real-world human environments must make contextually appropriate decisions when confronted with cluttered scenes. While modern convolutional and transformer-based detectors excel at answering ``What object is this?'', assistive robotics requires answering: ``Which object should I use for my task?''
+
+Consider practical domestic scenarios:
+\begin{enumerate}
+    \item \textbf{Assistive Seating:} When an elderly person asks to ``sit comfortably'' in a room containing an upholstered couch, a wooden dining chair, and a bar stool, a standard detector treats all three items identically as ``chair/furniture''. Selecting a hard wooden stool over a soft couch risks physical discomfort or injury.
+    \item \textbf{Elevation and Stability:} When asked to ``step on something to reach the top shelf'', a flimsy decorative chair is hazardous, while a sturdy wooden table or stepladder is suitable.
+    \item \textbf{Negative Scene Handling:} When asked to ``cut something'' in a living room with no knives or scissors, an intelligent agent must recognize that no suitable tool is present and safely reject the task.
+\end{enumerate}
+
+The baseline paper by Sawatzky et al. [1] pioneered this problem using Gated Graph Neural Networks (GGNN). However, their approach suffers from severe deployment limitations: it requires supervised training on $\sim$30,000 task-annotated images, relies on a heavy ResNet-101 backbone ($>$44M parameters), is confined strictly to 14 predefined tasks, and requires 150--200~W GPU hardware. Our final system replaces this with a training-free, zero-shot, dual-mode pipeline combining YOLOv8-nano, an offline 35.5~KB INT8 knowledge bank, and OpenRouter dynamic LLM affordance reasoning.
+
+\subsection{Alignment with Sustainable Development Goals}
+The proposed task-aware object selection framework aligns directly with the following United Nations Sustainable Development Goals (SDGs):
+\begin{itemize}
+    \item \textbf{SDG 8 -- Decent Work and Economic Growth (Target 8.2):} The system supports autonomous object picking and task-aware robotic decision-making, which can improve robotic productivity and operational efficiency in automated warehouse and logistics environments.
+    \item \textbf{SDG 9 -- Industry, Innovation and Infrastructure (Target 9.5):} The framework is designed for low-power edge-AI deployment, achieving operation below 15~W and an estimated 92.2\% reduction in power consumption compared with high-compute alternatives. This supports efficient and sustainable AI deployment on resource-constrained hardware.
+    \item \textbf{SDG 11 -- Sustainable Cities and Communities (Target 11.7):} The use of standard low-cost CPU hardware makes the system suitable for affordable assistive-technology applications, helping improve accessibility and practical domestic deployment in human-centered environments.
+\end{itemize}
+
+\section{Literature Survey}
+\textbf{A. Task-Driven Detection \& Gated Graph Networks [1, 2]:} Sawatzky et al. [1] introduced the COCO-Tasks benchmark ($\sim$40k images, 14 tasks) using GGNN [2] to propagate scene context across detections, reaching 32.6\% mAP. However, detector errors cascade across graph nodes, and it cannot generalize to novel tasks.
+
+\textbf{B. Visual Question Answering \& Scene Grounding [3, 4, 5]:} Early VQA frameworks [3, 4] fused global CNN grids with language representations. Anderson et al. [5] introduced bottom-up attention using Faster R-CNN object bounding boxes, proving localized regions provide superior semantic grounding.
+
+\textbf{C. Object Affordance \& Physical Tool Modeling [6, 7, 8, 9]:} CNN and CRF methods [6, 7] segmented affordances at the pixel level. Chuang et al. [8] showed affordances depend on contextual surroundings. Zhu et al. [9] modeled tool handling using 3D physical contact spaces.
+
+\textbf{D. Vision-Language Alignment \& Sentence-BERT [10, 11]:} CLIP [10] aligned image-text embeddings across 400M pairs for zero-shot classification, but requires $>$150~W GPUs. Reimers \& Gurevych [11] developed Sentence-BERT, producing 384-d semantic vectors in 15~ms on edge CPUs.
+
+\textbf{E. Knowledge Distillation \& LLM Reasoning [12, 13]:} Hinton et al. [12] established knowledge distillation to compact models. Brown et al. [13] demonstrated few-shot reasoning in large language models. Our system queries LLMs offline and via OpenRouter to distill structured physical affordances.
+
+\textbf{F. Lightweight Edge Detectors [14]:} Jocher et al. [14] released YOLOv8. The YOLOv8-nano variant ($\sim$3.2M parameters) operates entirely on CPU in 100--200~ms, making it the ideal edge detection front-end.
+
+\section{Pictorial Representation of Methodology}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\linewidth]{flowchart.png}
+\caption{Architectural workflow of the proposed SCORE framework, illustrating the dual-tier semantic engine, decoupled score fusion, and dual-gate relevance filtering executing entirely on edge CPU hardware.}
+\label{fig:methodology}
+\end{figure}
+
+The overall operational methodology of the SCORE framework is depicted in Fig.~\ref{fig:methodology}. The processing pipeline comprises five distinct functional modules:
+\begin{enumerate}
+    \item \textbf{Visual Perception Front-End:} An RGB image frame is processed by an anchor-free Ultralytics YOLOv8-nano detector ($\sim$3.2M parameters). The detector localizes candidate bounding boxes $b_i$, categorizes object labels $c_i$, and outputs visual detection confidences $\text{Conf}(o_i) \in [0, 1]$ in approximately 120~ms on CPU.
+    \item \textbf{Tier-1 Offline Knowledge Bank Retrieval:} For standard COCO classes, physical affordances (e.g., thermal resistance, support rigidity, sitting comfort) are pre-distilled into a compact 35.5~KB INT8 matrix. When a standard object is identified, its 384-dimensional affordance embedding is retrieved in $O(1)$ time ($<$0.5~ms) directly from CPU cache.
+    \item \textbf{Tier-2 Dynamic LLM Distillation (OpenRouter):} If an untrained open-vocabulary object (e.g., stepladder, sponge, frying pan) or an abstract novel verb (e.g., ``bake'', ``clean spill'') is queried, the dynamic engine dispatches a prompt across an automated fallback chain (NVIDIA Nemotron, Google Gemma) via OpenRouter. The distilled physical traits are encoded into a 384-d dense embedding via Sentence-BERT and cached locally in \texttt{openrouter\_cache.json} for persistent zero-latency recall.
+    \item \textbf{Decoupled Score Fusion:} Semantic relevance $\text{Sim}(o_i, t)$ is evaluated via cosine similarity between the query embedding and object affordance vector. The final task suitability score is formulated through linear score fusion:
+    \begin{equation}
+        \text{Score}(o_i) = \alpha \cdot \text{Sim}(o_i, t) + (1 - \alpha) \cdot \text{Conf}(o_i)
+    \end{equation}
+    where $\alpha = 0.70$ prioritizes functional affordance while reserving 30\% weight for visual confirmation.
+    \item \textbf{Dual-Gating Filter and Safe Abort:} To prevent hallucinated selections, candidates must satisfy both a semantic gating threshold ($\text{Sim} \ge 0.12$) and a minimum score threshold ($\text{Score} \ge 0.25$). If all candidates fail, the system outputs \texttt{NO\_SUITABLE\_OBJECT\_FOUND}, preventing false actions in negative scenes.
+\end{enumerate}
+
+\section{Results and Comparison with Two Papers}
+We benchmark the proposed decoupled edge framework against two foundational prior architectures: the Gated Graph Neural Network approach by Sawatzky et al. (CVPR 2019) [1] and the Visual Affordance Ranker by Chuang et al. (CVPR 2018) [8].
+
+\begin{table*}[t]
+\centering
+\caption{Multi-Dimensional Benchmark Comparison Across Architectural Approaches}
+\label{tab:comparison}
+\begin{tabular}{@{}llll@{}}
+\toprule
+\textbf{Performance Parameter} & \textbf{Paper 1: Sawatzky et al. [1]} & \textbf{Paper 2: Chuang et al. [8]} & \textbf{Our Proposed System} \\ \midrule
+\textbf{Core Architectural Method} & GGNN + ResNet-101 Backbone & Deep CNN Affordance Ranker & \textbf{YOLOv8n + 35.5KB Bank + OpenRouter} \\
+\textbf{Detection Accuracy (mAP@0.5)} & 32.6\% & 28.8\% & \textbf{36.2\% (+3.6\% gain)} \\
+\textbf{Ground-Truth Box Accuracy} & 74.2\% & 61.6\% & \textbf{76.8\% (+2.6\% gain)} \\
+\textbf{Supervision Required} & Supervised on $\sim$30k images & Supervised on action pairs & \textbf{Zero-Shot / Training-Free (0 images)} \\
+\textbf{Novel Task Generalization} & Closed set (14 tasks only) & Closed set (20 affordances) & \textbf{Infinite (Arbitrary Natural Language)} \\
+\textbf{Untrained Object Support} & No (80 COCO categories) & No (Fixed training vocabulary) & \textbf{Yes (Dynamic OpenRouter Distillation)} \\
+\textbf{End-to-End Latency} & $\sim$450~ms (Workstation GPU) & $\sim$380~ms (Workstation GPU) & \textbf{140--150~ms (Standard Edge CPU)} \\
+\textbf{Inference Hardware} & Dedicated GPU ($\sim$180~W) & Dedicated GPU ($\sim$150~W) & \textbf{Standard Commodity CPU ($<$15~W)} \\
+\textbf{Memory Footprint} & $>$170~MB (ResNet-101 + GGNN) & $>$140~MB (VGG-16 backbone) & \textbf{35.50~KB INT8 (+ 6.25MB YOLOv8n)} \\ \bottomrule
+\end{tabular}
+\end{table*}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.98\linewidth]{graph.png}
+\caption{Methodological and architectural benchmark comparison against prior art across (a) task-driven selection accuracy (mAP@0.5), (b) end-to-end CPU vs. GPU latency, (c) operational power dissipation, and (d) supervision requirements.}
+\label{fig:graph}
+\end{figure}
+
+As shown in Fig.~\ref{fig:graph} and Table~\ref{tab:comparison}, the decoupled dual-tier architecture establishes clear technical advantages:
+\begin{itemize}
+    \item \textbf{Accuracy Gains:} Our system achieves 36.2\% mAP@0.5 on detections (+3.6\% over GGNN) and 76.8\% on ground-truth boxes (+2.6\% over GGNN).
+    \item \textbf{Latency and Power Reduction:} By replacing heavy graph message passing and ResNet backbones with YOLOv8-nano and cache-resident INT8 matrices, latency drops from 450~ms on GPU to 145~ms on CPU (a $3\times$ speedup) while slashing power draw by 92.2\% ($<$15~W vs. 180~W).
+    \item \textbf{Supervision Elimination:} While prior techniques demand 15,000 to 30,000 task-annotated training samples, our system operates completely zero-shot.
+\end{itemize}
+
+\section{Real-World Experimental Validation Results}
+The physical viability of the SCORE architecture was evaluated across complex real-world conditions, including cluttered environments, novel tasks, negative scenes, and open-vocabulary objects.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\linewidth]{1.jpeg}
+\caption{Real-world street clutter evaluation under the novel query ``phone call''. The proposed decoupled scoring isolates the handheld smartphone (Score: 0.6021, Sim: 0.4583, Conf: 0.9378) over surrounding vehicles and pedestrians without task-specific retraining.}
+\label{fig:exp1}
+\end{figure}
+
+\textbf{1. Real Photo Test (Untrained Query: ``phone call''):}
+As illustrated in Fig.~\ref{fig:exp1}, the system was evaluated on an unconstrained real-world photograph capturing a handheld smartphone amidst dense background street traffic. The YOLOv8-nano detector generated candidates: \texttt{cell phone} (conf: 0.9378), \texttt{person} (conf: 0.8523), and background \texttt{car} instances (conf: 0.4563). The semantic engine computed cosine similarities between the 384-d query representation and candidate affordances. The cell phone yielded an affordance similarity of 0.4583, producing a top-ranked fused score of 0.6021. In contrast, the person achieved a fused score of 0.4041 and cars scored 0.2889. The smartphone was correctly highlighted in green without any prior training on telecommunication task queries.
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\linewidth]{2.jpeg}
+\caption{Dynamic task affordance decomposition for the novel cooking query ``bake''. OpenRouter dynamically distills thermal heating properties, prioritizing the microwave (Score: 0.6488, Sim: 0.5751) over non-thermal kitchen utensils.}
+\label{fig:exp2}
+\end{figure}
+
+\textbf{2. Kitchen Scene Test (Novel Query: ``bake''):}
+Fig.~\ref{fig:exp2} demonstrates zero-shot dynamic reasoning on an untrained domestic culinary task. Standard benchmark datasets restrict actions to fixed verbs (e.g., ``cut'', ``pour''). When provided with the query ``bake'', Tier-2 OpenRouter reasoning dynamically decomposed the verb into physical functional requirements: enclosed thermal cavity, radiative heating, and food container support. Evaluated against detected candidates (\texttt{knife}, \texttt{microwave}, \texttt{cutting board}, \texttt{wine glass}, \texttt{bowl}), the system assigned the microwave a semantic similarity of 0.5751 and a visual confidence of 0.8208, resulting in a dominant fused score of 0.6488. Non-thermal preparation utensils were successfully subordinated (bowl: 0.4090, knife: 0.3702).
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=0.95\linewidth]{3.jpeg}
+\caption{Negative scene evaluation under the query ``cut something'' in an office/living space lacking cutting implements. Both detected items fail semantic gating (Sim $<$ 0.12), triggering a safe \texttt{NO\_SUITABLE\_OBJECT\_FOUND} abort.}
+\label{fig:exp3}
+\end{figure}
+
+\textbf{3. Negative Scene Rejection Test (``cut something'' in Living Room):}
+Fig.~\ref{fig:exp3} highlights the critical safety mechanism of dual-gate relevance filtering in negative scenes. When prompted to ``cut something'' in a living room containing only a couch, coffee table, and potted plant, standard detectors fail by force-ranking the highest visual detection. In our architecture, the potted plant yielded a similarity of 0.0687 and the couch yielded $-0.0383$. Because all candidates failed the primary semantic gate ($\text{Sim} \ge 0.12$), the system safely aborted with status \texttt{NO\_SUITABLE\_OBJECT\_FOUND}, preventing hazardous robotic actuation.
+
+\textbf{4. Novel Untrained Objects Test (Beyond COCO-80):}
+The system was further validated on objects entirely absent from the 80 COCO categories using dynamic OpenRouter distillation:
+\begin{itemize}
+    \item Task ``reach top shelf to grab books'' correctly matched \texttt{ladder} ($\text{Sim} = 0.4865$) over hammer and cushion.
+    \item Task ``fry an egg for breakfast'' selected \texttt{frying pan} ($\text{Sim} = 0.5913$) over sponge and flashlight.
+    \item Task ``make a hard wooden chair softer'' selected \texttt{cushion} ($\text{Sim} = 0.5117$) over stools.
+    \item Task ``wipe spilled milk on counter'' selected \texttt{sponge} ($\text{Sim} = 0.4280$).
+\end{itemize}
+
+\section{Justification}
+\textbf{1. Weighted Fusion Formulation ($\text{Score} = 0.70 \cdot \text{Sim} + 0.30 \cdot \text{Conf}$):}
+Relying exclusively on semantic text similarity creates vulnerability to detector hallucinations: a blurry background artifact misclassified as a ``towel'' with marginal confidence (e.g., 0.15) would erroneously be selected for ``clean spill''. Weighting detection confidence ensures physical presence gates linguistic relevance. Conversely, assigning 70\% weight to semantics ensures functional suitability overrides visual prominence (e.g., prioritizing a soft sofa over a high-confidence wooden table for seating).
+
+\textbf{2. Dual-Tier Synergy (Offline Bank + OpenRouter):}
+Invoking cloud-hosted LLMs for every frame introduces 800--1500~ms latency and creates strict network dependency. Precomputing 80 COCO categories into an INT8 matrix guarantees deterministic sub-20~ms execution on edge CPUs for standard domestic items. OpenRouter is activated only when novel terms appear, caching results locally to eliminate recurring API overhead.
+
+\textbf{3. Decoupling Advantage Over Graph Neural Networks:}
+In the baseline GGNN [1], object nodes iteratively exchange messages across $T=3$ recurrent time steps. Detector classification noise on a single node corrupts the feature representations of all neighboring objects. Our decoupled formulation isolates candidate evaluations in continuous semantic space, eliminating error cascades while removing GPU hardware dependencies.
+
+\section{Conclusion \& Future Work}
+This paper presented SCORE, an edge-deployable, zero-shot task-aware object selection framework operating entirely on commodity CPU hardware. By replacing supervised Graph Neural Networks with a decoupled dual-tier architecture combining YOLOv8-nano, a 35.5~KB INT8 offline affordance bank, and OpenRouter dynamic LLM distillation, the system attains 36.2\% mAP on COCO-Tasks (+3.6\% over baseline) in 140--150~ms latency while consuming under 15~W power. Dual-gate filtering guarantees robust negative scene rejection. Future work will integrate 6-DOF robotic manipulator grasp pose estimation and multi-room visual SLAM exploration.
+
+\begin{thebibliography}{00}
+\bibitem{b1} J. Sawatzky, Y. Souri, C. Grund, and J. Gall, ``What Object Should I Use? --- Task Driven Object Detection,'' in \textit{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR)}, 2019, pp. 7605--7614.
+\bibitem{b2} Y. Li, D. Tarlow, M. Brockschmidt, and R. Zemel, ``Gated Graph Sequence Neural Networks,'' in \textit{Proc. Int. Conf. Learn. Represent. (ICLR)}, 2016.
+\bibitem{b3} S. Antol, A. Agrawal, J. Lu, M. Mitchell, D. Batra, C. L. Zitnick, and D. Parikh, ``VQA: Visual Question Answering,'' in \textit{Proc. IEEE Int. Conf. Comput. Vis. (ICCV)}, 2015, pp. 2425--2433.
+\bibitem{b4} H. Gao, J. Mao, J. Zhou, Z. Huang, L. Wang, and W. Xu, ``Are You Talking to a Machine? Dataset and Methods for Multilingual Image Question,'' in \textit{Proc. Adv. Neural Inf. Process. Syst. (NeurIPS)}, 2015.
+\bibitem{b5} P. Anderson et al., ``Bottom-Up and Top-Down Attention for Image Captioning and Visual Question Answering,'' in \textit{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR)}, 2018, pp. 6077--6086.
+\bibitem{b6} A. Nguyen, D. Kanoulas, D. G. Caldwell, and N. G. Tsagarakis, ``Detecting Object Affordances with Convolutional Neural Networks,'' in \textit{Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS)}, 2016, pp. 2765--2770.
+\bibitem{b7} A. Nguyen, D. Kanoulas, D. G. Caldwell, and N. G. Tsagarakis, ``Object-Based Affordances Detection with Convolutional Neural Networks and Dense Conditional Random Fields,'' in \textit{Proc. IEEE/RSJ Int. Conf. Intell. Robots Syst. (IROS)}, 2017, pp. 5908--5915.
+\bibitem{b8} C. Chuang, J. Li, A. Torralba, and S. Fidler, ``Learning to Act Properly: Predicting and Explaining Affordances from Images,'' in \textit{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR)}, 2018, pp. 975--984.
+\bibitem{b9} Y. Zhu, Y. Zhao, and S. C. Zhu, ``Understanding Tools: Task-Oriented Object Modeling, Learning and Recognition,'' in \textit{Proc. IEEE/CVF Conf. Comput. Vis. Pattern Recognit. (CVPR)}, 2015, pp. 2855--2864.
+\bibitem{b10} A. Radford et al., ``Learning Transferable Visual Models from Natural Language Supervision,'' in \textit{Proc. Int. Conf. Mach. Learn. (ICML)}, 2021, pp. 8748--8763.
+\bibitem{b11} N. Reimers and I. Gurevych, ``Sentence-BERT: Sentence Embeddings using Siamese BERT-Networks,'' in \textit{Proc. Conf. Empirical Methods Nat. Lang. Process. (EMNLP)}, 2019, pp. 3982--3992.
+\bibitem{b12} G. Hinton, O. Vinyals, and J. Dean, ``Distilling the Knowledge in a Neural Network,'' \textit{arXiv preprint arXiv:1503.02531}, 2015.
+\bibitem{b13} T. Brown et al., ``Language Models are Few-Shot Learners,'' in \textit{Proc. Adv. Neural Inf. Process. Syst. (NeurIPS)}, vol. 33, 2020, pp. 1877--1901.
+\bibitem{b14} G. Jocher, A. Chaurasia, and J. Qiu, ``Ultralytics YOLOv8,'' 2023. [Online]. Available: \url{https://github.com/ultralytics/ultralytics}.
+\end{thebibliography}
+
+\end{document}
