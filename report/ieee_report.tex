@@ -16,9 +16,7 @@
 
 \begin{document}
 
-\title{SCORE: Semantic and Confidence-Based Object Ranking at the Edge for Task-Aware Selection\\
-\thanks{Capstone Project (Final Review) 2025--2026, School of Electronics Engineering (SENSE), Vellore Institute of Technology (VIT), Vellore, India.}
-}
+\title{SCORE: Semantic and Confidence-Based Object Ranking at the Edge for Task-Aware Selection}
 
 \author{
 \begin{tabular*}{\textwidth}{@{\extracolsep{\fill}}cc@{}}
@@ -59,7 +57,7 @@ Vellore, India \\
 \maketitle
 
 \begin{abstract}
-Traditional object detection algorithms excel at recognizing and locating categories within images, yet they lack the capability to choose the most suitable object for a specific human task. Our earlier prototype combined a YOLOv8‑nano detector with a compact 47 KB offline semantic bank. In this final version we introduce a two‑level semantic engine: a 35.5 KB INT8 knowledge base covering common COCO classes, and a dynamic Large Language Model (via OpenRouter) that reasons about unseen objects and arbitrary natural‑language commands. Detected objects are matched to the task description using cosine similarity between 384‑dimensional Sentence‑BERT embeddings. A fusion formula blends semantic similarity (70\%) with detection confidence (30\%) to rank candidates, and a dual‑gate filter (similarity ≥ 0.12, overall score ≥ 0.25) discards unsuitable selections. Experiments show our approach attains 36.2\% mAP on the COCO‑Tasks benchmark while running in 140–150 ms on a modest edge CPU, removing the dependency on high‑power GPUs.
+Autonomous robotic systems operating in unconstrained human environments require the ability to select objects based on contextual affordances rather than raw categorical labels. Although contemporary object detectors identify and localize physical entities with high precision, they cannot determine an object's functional suitability for open-ended human tasks. This paper presents SCORE (Semantic and Confidence-Based Object Ranking at the Edge), an edge-deployable, training-free framework for task-aware object selection. SCORE integrates an anchor-free YOLOv8-nano detector with a dual-tier semantic reasoning architecture: an ultra-compact 35.5~KB INT8 offline affordance bank for standard objects, paired with an on-demand Large Language Model fallback via OpenRouter for open-vocabulary concepts and novel task commands. Semantic relevance is evaluated using cosine similarity over 384-dimensional Sentence-BERT embeddings and fused linearly with visual detection confidence (70/30 weighting). A dual-stage gating mechanism (similarity threshold 0.12, score threshold 0.25) reliably rejects candidate selections in negative scenes lacking actionable tools. Evaluated on the COCO-Tasks benchmark, SCORE achieves 36.2\% mAP on predicted detections and 76.8\% top-1 accuracy on ground-truth boxes---outperforming prior Gated Graph Neural Network baselines by 3.6\% while executing in 140--150~ms on commodity CPU hardware under 15~W power dissipation, completely eliminating workstation GPU dependency.
 \end{abstract}
 
 \begin{IEEEkeywords}
@@ -83,7 +81,7 @@ Affordance learning has historically focused on dense pixel-level labeling or ge
 
 Vision-language models like CLIP [10] provide zero-shot transfer by projecting image patches and text into shared spaces, yet their computational footprint limits on-robot edge deployment. Sentence-BERT [11] addresses the text side efficiently, extracting 384-dimensional sentence embeddings on basic CPUs in roughly 15~ms. Coupled with parameter distillation concepts [12] and the semantic reasoning of recent language models [13], we show that lightweight object detectors [14] can be augmented with decoupled semantic vectors to achieve open-ended task selection without retraining.
 
-\section{Pictorial Representation of Methodology}
+\section{Methodology and System Architecture}
 
 \begin{figure}[htbp]
 \centering
